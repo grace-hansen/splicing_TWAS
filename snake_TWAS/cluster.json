@@ -1,0 +1,38 @@
+{
+    "__default__" :
+    {
+        "mem" : 2000,
+        "n" : 1,
+        "tasks" : 1,
+        "name" : "{rule}-{wildcards.chr}",
+        "logfile" : "log/splicing-{rule}-{wildcards.chr}-%j.out"
+    },
+    "make_LD_panel" :
+    {
+        "mem" : 4000,
+    },
+    "prep_intron_counts" :
+    {
+        "mem" : 24000
+    },
+    "make_weights" :
+    {
+        "mem" : 12000,
+        "tasks" : 16,
+        "time" : "48:00:00"
+    },
+    "run_TWAS" :
+    {
+        "mem" : 32000
+    },
+    "run_TWAS_postprocessing" :
+    {
+        "mem" : 24000
+    },
+    "collect_results" :
+    {
+        "mem" : 8000,
+        "name" : "{rule}",
+        "logfile" : "log/exp-{rule}-%j.out"
+    }
+}

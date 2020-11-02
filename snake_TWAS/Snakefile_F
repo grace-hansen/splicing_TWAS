@@ -1,0 +1,118 @@
+#Snakefile
+#
+#This file will run the TWAS pipeline from a directory containing GWAS sumamry stats, a reference LD panel, and GTEx expression data.
+#
+#To configure the paths to data files and other settings, edit
+#config.yaml
+#
+#to configure job submission settings for cluster, edit
+#cluster.json and submit.snakemake.sh
+
+#to run on RCC midway2 use 'scripts/snake_TWAS/snakemake.batch'
+import glob
+import os
+from snakemake.utils import R
+
+#Configuration -------------------------------------
+
+configfile: "/project2/nobrega/grace/splicing/scripts/snake_TWAS/config_F.yaml"
+
+#Paths for data (end with forward slash)
+dir_proj= config["dir"]+config["trait"]+"/"
+tissue=config["tissue"]
+trait=config["trait"]
+scripts=config["scripts"]
+
+#Paths for files:
+out=dir_proj + tissue + "/results/"
+logs=dir_proj + "/log/"
+tmp="/scratch/midway2/gthansen/splicing/"+trait+"/"+tissue+"/"
+
+#Chromosomes: input for most scripts
+chrs=config["chrs"]
+all_chrs=range(1,23)
+
+#Input files for TWAS
+LD=config["LD"]
+data_source=config["data_source"]
+vcf=config["vcf"]
+lookup=config["lookup"]
+exclude=config["exclude"]
+terms=config["terms"]
+covars=config["covars"]
+
+#Settings for TWAS
+offset=config["offset"]
+MAF=config["MAF"]
+
+
+assert os.path.exists(dir_proj), "Project directory exists"
+
+#Directory to send log files. Needs to be created manually since it
+#is not a file created by a Snakemake rule.
+if not os.path.isdir(logs):
+    os.mkdir(logs)
+if not os.path.isdir(tmp):
+    os.mkdir(tmp)
+
+os.chdir(dir_proj)
+
+#Rules -------------------------------------
+
+rule all: #Here we tell snakemake everything that we want to be made
+    input:
+        expand(out+"{data_source}.all.dat.top",data_source=data_source)
+
+rule make_LD_panel:
+    params:
+        chr="{chr}"
+    output:
+        LD+"{chr}.bim"
+    shell: "{scripts}make_LDref.sh {LD} {params.chr} {data_source} {vcf} {lookup} {exclude} {MAF}"
+
+rule prep_intron_counts:
+    params: 
+        chr=lambda wildcards: chrs[wildcards.chr]
+    output: 
+        dir_proj+tissue+"/{tissue}_perind.decs.{chr}.gz"
+    shell: "python2 {scripts}prep_intron_counts.py {tissue} {trait} chr{params.chr} {data_source} {tmp} {vcf} --exclude {exclude}"
+
+rule make_weights:
+    input: 
+        dir_proj+tissue+"/"+tissue+"_perind.decs.{chr}.gz"
+    params:
+        chr="{chr}"
+    output:
+        temp(tmp+"make_weights_{chr}.txt")
+    shell: "python2 {scripts}make_weights.py {tissue} {trait} chr{params.chr} {data_source} {offset} {covars} {tmp}"
+
+rule run_TWAS:
+    input:
+        LD_file=LD+"{chr}.bim",
+        temp=tmp+"make_weights_{chr}.txt",
+        sumstats=dir_proj+trait+"_GWAS_sumstats"
+    params:
+        chr="{chr}"
+    output: 
+        out+"{data_source}.{chr}.dat"
+    shell: "python2 {scripts}run_TWAS.py chr{params.chr} {tissue} {data_source} {out} {input.sumstats} {LD}"
+
+rule run_TWAS_postprocessing:
+    input:
+        LD_files=[LD+str(i)+".bim" for i in all_chrs],
+        dat=[out+"{data_source}."+str(i)+".dat" for i in all_chrs],
+        sumstats=dir_proj+trait+"_GWAS_sumstats"
+    params:
+        chr="{chr}"
+    wildcard_constraints:
+        chr="\d+"
+    output:
+        out1=out+"{data_source}.{chr}.dat.top"
+    shell: "python2 {scripts}TWAS_postprocess.py chr{params.chr} {tissue} {data_source} {out} {input.sumstats} {LD}"
+
+rule collect_results:
+    input:
+        expand(out+"{data_source}.{chr}.dat.top",chr=chrs,data_source=data_source)
+    output:
+        out=out+"{data_source}.all.dat.top"
+    shell: "{scripts}collect_results.sh {trait} {tissue} {data_source}"

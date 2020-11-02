@@ -1,0 +1,78 @@
+#Snakemake configuration file
+
+#Specify paths to data files
+
+#Paths must end with forward slash
+
+#project directory
+dir: /project2/nobrega/grace/splicing/
+
+
+#Scripts directory:
+scripts: /project2/nobrega/grace/splicing/scripts/snake_TWAS/
+
+
+#Log directory:
+dir_log: log/
+
+
+#Specify chromosomes:
+chrs: 
+  "1" : "1"
+  "2" : "2"
+  "3" : "3"
+  "4" : "4"
+  "5" : "5"
+  "6" : "6"
+  "7" : "7"
+  "8" : "8"
+  "9" : "9"
+  "10" : "10"
+  "11" : "11"
+  "12" : "12"
+  "13" : "13"
+  "14" : "14"
+  "15" : "15"
+  "16" : "16"
+  "17" : "17"
+  "18" : "18"
+  "19" : "19"
+  "20" : "20"
+  "21" : "21"
+  "22" : "22"
+
+##########Files for TWAS##########
+#Trait:
+trait: WHR_M
+
+#Tissue:
+tissue: adipose_subcutaneous
+#Terms to identify tissue:
+
+terms: Adipose_Subcutaneous
+
+#LD reference panel:
+LD: /project2/nobrega/grace/LD/GTEx_v8_males/
+
+########TWAS settings#############
+
+#Lookup table matching GTEx variant IDs to rsids:
+lookup: None
+
+#Covariates (non-adipose number and age):
+covars: /project2/nobrega/grace/adipose_subcutaneous_GTEx_nosex.covar
+
+#Original genotype vcf:
+vcf: /project2/nobrega/grace/genos/GTEx_v8/vcf/GTEx_Analysis_2017-06-05_v8_WGS_VCF_files_GTEx_Analysis_2017-06-05_v8_WholeGenomeSeq_838Indiv_Analysis_Freeze.SHAPEIT2_phased.vcf.gz
+
+#Exclude individuals:
+exclude: None
+
+#Window size for grabbing variants around gene TSS:
+offset: 5e4
+
+#Transcriptomic data being used:
+data_source: GTEx_v8
+
+#MAF threshold:
+MAF: 0.01

@@ -1,0 +1,37 @@
+#Snakemake configuration file
+
+#Specify paths to data files
+
+#Paths must end with forward slash
+
+#project directory
+dir: /project2/nobrega/grace/splicing/
+
+
+#Scripts directory:
+scripts: /project2/nobrega/grace/splicing/scripts/snake_postprocess/
+
+
+#Log directory:
+dir_log: log/
+
+##########Files for TWAS##########
+#Trait:
+trait: obesity
+
+#Tissue:
+tissue: cortex
+
+#LD reference panel:
+LD: /project2/nobrega/grace/LD/CMC_LD/
+
+########TWAS settings#############
+
+#Window size for grabbing variants around gene TSS:
+offset: 5e4
+
+#RNAseq dataset size:
+splice_N: 503
+
+#Where to look for genotypes:
+data_source: CMC

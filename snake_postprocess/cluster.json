@@ -1,0 +1,54 @@
+{
+    "__default__" :
+    {
+        "mem" : 4000,
+        "n" : 1,
+        "tasks" : 1
+    },
+    "prep_coloc_loci" :
+    {
+        "mem" : 24000,
+        "name" : "{rule}-{wildcards.intron}",
+        "logfile" : "log/{rule}-{wildcards.intron}-%j.out"
+    },
+    "run_coloc" :
+    {
+        "mem" : 8000,
+        "name" : "{rule}-{wildcards.intron}",
+        "logfile" : "log/{rule}-{wildcards.intron}-%j.out"
+    },
+    "collect_coloc" :
+    {
+        "name" : "{rule}",
+        "logfile" : "log/{rule}-%j.out"
+    },
+    "annotate_coloc" :
+    {
+        "mem" : 8000,
+        "name" : "{rule}",
+        "logfile" : "log/{rule}-%j.out"
+    },
+    "make_rdat" :
+    {
+        "time" : "24:00:00",
+        "mem" : 24000,
+        "name" : "{rule}",
+        "logfile" : "log/{rule}-%j.out"
+    },
+    "diff_splicing" :
+    {
+        "name" : "{rule}-{wildcards.gene}",
+        "logfile" : "log/{rule}-{wildcards.gene}-%j.out"
+    },
+    "quantify_splicing" :
+    {
+        "name" : "{rule}-{wildcards.gene}",
+        "logfile" : "log/{rule}-{wildcards.gene}-%j.out"
+    },
+    "make_noisy_qqplots" :
+    {
+        "mem" : 8000,
+        "name" : "{rule}",
+        "logfile" : "log/{rule}-%j.out"
+    },
+}

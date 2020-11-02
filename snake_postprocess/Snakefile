@@ -1,0 +1,128 @@
+#Snakefile
+#
+#This file will run the TWAS pipeline from a directory containing GWAS sumamry stats, a reference LD panel, and GTEx splicing data.
+#
+#To configure the paths to data files and other settings, edit
+#config.yaml
+#
+#to configure job submission settings for cluster, edit
+#cluster.json and submit.snakemake.sh
+
+#to run on RCC midway2 use 'scripts/snake/submit_snakemake.sh'
+import glob
+import os
+from snakemake.utils import R
+
+#Configuration -------------------------------------
+
+configfile: "/project2/nobrega/grace/splicing/scripts/snake_postprocess/config.yaml"
+
+#Paths for data (end with forward slash)
+tissue=config["tissue"]
+trait=config["trait"]
+dir_proj= config["dir"]+trait+"/"+tissue+"/results/posthoc/"
+scripts=config["scripts"]
+
+#Paths for files:
+logs=dir_proj + "log/"
+tmp=dir_proj + "tmp/"
+
+#Paths for input files:
+LD=config["LD"]
+sig_genes=open(dir_proj+"sig_genes",'r').readlines()
+sig_genes=[x.rstrip() for x in sig_genes]
+
+sig_introns=open(dir_proj+"sig_introns",'r').readlines()
+sig_introns=[x.rstrip() for x in sig_introns]
+
+data_source=config["data_source"]
+
+
+#Settings:
+offset=config["offset"]
+splice_N=config["splice_N"]
+
+assert os.path.exists(dir_proj), "Project directory exists"
+
+#Directory to send log files. Needs to be created manually since it
+#is not a file created by a Snakemake rule.
+if not os.path.isdir(logs):
+    os.mkdir(logs)
+
+
+os.chdir(dir_proj)
+
+#Rules -------------------------------------
+
+rule all: #Here we tell snakemake everything that we want to be made
+    input:
+        dir_proj+"coloc/coloc_annotation.txt",
+        #expand(dir_proj+"noisy/qqplots_splicing_{trait}_{tissue}.pdf",trait=trait,tissue=tissue),
+        expand(dir_proj+"diff_splicing/{gene}_isoform_plot.pdf",gene=sig_genes)
+
+
+############ TWAS ###################
+
+rule prep_coloc_loci:
+    input:
+        sumstats=config["dir"]+trait+"/"+trait+"_GWAS_sumstats",
+        sQTL=expand(config["dir"]+trait+"/"+tissue+"/"+tissue+"_sQTLs_{data_source}.txt.gz",data_source=data_source)
+    output:
+        dir_proj+"coloc/loci/{intron}_locus_status"
+    shell: "python2 {scripts}make_locus_files_splicing.py {trait} {tissue} {wildcards.intron} {input.sumstats} {LD} {data_source}"
+
+rule run_coloc:
+    input:
+        dir_proj+"coloc/loci/{intron}_locus_status"
+    output:
+        dir_proj+"coloc/{intron}_coloc_status"
+    shell: "Rscript {scripts}run_coloc.R {trait} {tissue} {wildcards.intron} {offset} {splice_N}"
+
+
+rule collect_coloc:
+    input:
+        expand(dir_proj+"coloc/{intron}_coloc_status",intron=sig_introns)
+    output:
+        coloc_list=dir_proj+"coloc/colocalizing_genes_rsids"
+    shell: "Rscript {scripts}collect_coloc.R {trait} {tissue} {data_source}"
+
+
+rule annotate_coloc:
+    input:
+        coloc_list=dir_proj+"coloc/colocalizing_genes_rsids"
+    output:
+        dir_proj+"coloc/coloc_annotation.txt"
+    shell: "python2 {scripts}annotate_coloc.py {trait} {tissue} {input} {data_source} coloc_annotation.txt"
+
+
+rule make_rdat:
+    input:
+        expand(config["dir"]+trait+"/"+tissue+"/results/{data_source}.all.dat.top.gene",data_source=data_source)
+    output:
+        dir_proj+"reads_dat/{tissue}.Rdat"
+    shell: "Rscript {scripts}make_rdat.R {trait} {tissue} {offset} {data_source}"
+
+
+rule diff_splicing:
+    input:
+        expand(dir_proj+"reads_dat/{tissue}.Rdat",tissue=tissue)
+    output:
+        dir_proj+"diff_splicing/{gene}_isoform_plot.pdf"
+    shell: "Rscript {scripts}plot_splicing_gene.R {wildcards.gene} {trait} {tissue} {data_source}"
+
+rule quantify_splicing:
+    input:
+        dir_proj+"coloc/colocalizing_genes_rsids",
+        expand("/project2/nobrega/grace/noisy/reads_dat/{tissue}_allreads.Rdat",tissue=tissue),
+    output: 
+        dir_proj+"noisy/lm/{gene}_status.txt",
+        dir_proj+"boxplots/{gene}_status.txt"
+    shell: "Rscript {scripts}quantify_noisy_splicing_allreads.R {trait} {tissue} {wildcards.gene} {data_source}"
+
+
+rule make_noisy_qqplots:
+    input:
+        expand(dir_proj+"noisy/lm/{gene}_status.txt",gene=sig_genes)
+    output:
+        dir_proj+"noisy/qqplots_splicing_{trait}_{tissue}.pdf"
+    shell: "Rscript {scripts}plot_noisy_splicing_clusts.R {trait} {tissue}"

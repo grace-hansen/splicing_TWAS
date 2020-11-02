@@ -1,0 +1,60 @@
+#comments taken from John's scqtl environment file
+# Conda configuration file to reproduce computing environment
+#
+# Create the conda environment:
+#
+# conda env create --file environment.yaml
+#
+# Update the conda environment:
+#
+# conda env update --file environment.yaml
+#
+# Activate the conda environment:
+#
+# source activate three-prime-env
+#
+# Deactivate the conda environment:
+#
+# source deactivate three-prime-env
+#
+#Load the R packages piecewise with conda env update
+
+
+name:
+    TWAS-splice-env2
+channels:
+    - conda-forge #libjpeg 9
+    - bioconda #libjpeg 8?
+    - defaults #libjpeg 8
+    - r
+    - moble
+    - davidaknowles
+    - creditx
+
+dependencies:
+    - r-base #conda-forge, r
+    - r-data.table #conda-forge, bioconda, r
+    - r-tidyverse #conda-forge, r
+    - r-optparse #bioconda, conda-forge
+    - r-foreach #conda-forge, r
+    - r-glmnet #conda-forge, r
+    - r-devtools # conda-forge, r
+    - python #3.7.0, conda-forge
+    - bitarray=0.8 #conda-forge
+    - nose=1.3 #conda-forge
+    - numpy=1.12 #conda-forge
+    - pandas=0.20 #conda-forge
+    - scipy=0.18 #conda-forge
+    - pytables #conda-forge
+    - regtools
+    - r-coloc #bioconda
+    - plink #1.90b4, bioconda
+    - snakemake #5.2.2, bioconda
+    - pybedtools=0.7 #bioconda
+    - bcftools #bioconda
+    - vcftools #bioconda
+    - pysam #bioconda
+    - r-gridextra #r
+    - gemma #moble
+    - r-leafcutter
+    - gcc-7
